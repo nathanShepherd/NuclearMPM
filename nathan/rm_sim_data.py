@@ -1,6 +1,6 @@
 from pathlib import Path
 
-def remove_simulation_files(text_folder="../../build/tmp",
+def remove_simulation_files(text_folder="tmp",
                             other_ext=["*.pkl","*.csv"]):
     text_folder = Path(text_folder)
     print(f"Deleting folder {text_folder}")
