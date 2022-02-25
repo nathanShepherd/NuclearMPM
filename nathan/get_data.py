@@ -1,11 +1,15 @@
+from genericpath import exists
+from re import T
+from tempfile import tempdir
 import numpy as np
 import pandas as pd
+from os import system
 import pickle5 as pkl
 from pathlib import Path
 
-def parse_text_files(data_dir="../../build/tmp"):
+def parse_text_files(data_dir="../build/tmp",cache_results=False):
     sim_dict_path = Path('sim_results_dict.pkl')
-    if sim_dict_path.exists():
+    if sim_dict_path.exists() and cache_results:
         print("Previous Simulation Results Found")
         with open(sim_dict_path, 'rb') as reader:
             dat = pkl.load(reader)
@@ -68,12 +72,13 @@ def parse_text_files(data_dir="../../build/tmp"):
 
         dat[var] = var_df
     print(" Done")
-    with open(sim_dict_path, 'wb') as writer:
-        pkl.dump(dat, writer, protocol=pkl.HIGHEST_PROTOCOL)
-    print(f"Saved Results to {sim_dict_path}")
+    if cache_results:
+        with open(sim_dict_path, 'wb') as writer:
+            pkl.dump(dat, writer, protocol=pkl.HIGHEST_PROTOCOL)
+        print(f"Saved Results to {sim_dict_path}")
     return dat
 
-def concat_dataframe(verbose=False):
+def concat_dataframe(csv_dir,data_dir="../build/tmp",verbose=False):
     '''       
         x:         (n, 2)   Position
         v:         (n, 2)   Velocity
@@ -85,10 +90,13 @@ def concat_dataframe(verbose=False):
         mass:      (resolution, 2)
         timestep:  (n,)
     '''
-    data_dict = parse_text_files()
     print("Converting Dict to DataFrame")
+    data_dict = parse_text_files(data_dir)
     paths = [Path('results.csv'),Path("velocity.csv"), Path("mass.csv")]
-    res_csv, vel_csv, mass_csv = paths
+    csv_dir = Path(csv_dir)
+    if not csv_dir.exists():
+        csv_dir.mkdir()
+    res_csv, vel_csv, mass_csv = [csv_dir / p for p in paths]
     if res_csv.exists():
         for i, path in enumerate(paths):
             paths[i] = pd.read_csv(path)
@@ -129,8 +137,27 @@ def concat_dataframe(verbose=False):
 
     return sub_df, data_dict['velocity'], data_dict['mass']
 
-if __name__ == "__main__":
-    concat_dataframe()
+def exec_test(which="small_binary_g", _exe="../build/nuclear_mpm_solver"):
+    tests = {"small_binary_g":{"diff":"gravity",
+                               "spec":["--dump --steps 100 --gravity -9.8 --cube0-x 0.4 --cube0-y 0.6",
+                                       "--dump --steps 100 --gravity -19.8 --cube0-x 0.4 --cube0-y 0.6"]}
+                               }
+    temp_loc = Path('tmp')
+    if temp_loc.exists():
+        for file in temp_loc.iterdir():
+            file.unlink()
+        temp_loc.rmdir()
+
+    for idx, spec in enumerate(tests[which]['spec']):
+        system(_exe + " " + spec)
+        csv_dir = which + "_" + str(idx)
+        data_dir = csv_dir + "_raw"
+        system(f"mv {temp_loc} {data_dir}")
+        concat_dataframe(csv_dir, data_dir)
+
+if __name__ == "__main__":    
+    #concat_dataframe()
+    exec_test()
 
             
 
