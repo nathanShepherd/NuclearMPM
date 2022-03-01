@@ -140,7 +140,10 @@ def concat_dataframe(csv_dir,data_dir="../build/tmp",verbose=False):
 def exec_test(which="small_binary_g", _exe="../build/nuclear_mpm_solver"):
     tests = {"small_binary_g":{"diff":"gravity",
                                "spec":["--dump --steps 100 --gravity -9.8 --cube0-x 0.4 --cube0-y 0.6",
-                                       "--dump --steps 100 --gravity -19.8 --cube0-x 0.4 --cube0-y 0.6"]}
+                                       "--dump --steps 100 --gravity -19.8 --cube0-x 0.4 --cube0-y 0.6"]},
+             "large_binary_g":{"diff":"gravity",
+                               "spec":["--dump --steps 1000 --gravity -9.8 --cube0-x 0.4 --cube0-y 0.6",
+                                       "--dump --steps 1000 --gravity -19.8 --cube0-x 0.4 --cube0-y 0.6"]}
                                }
     temp_loc = Path('tmp')
     if temp_loc.exists():
@@ -157,7 +160,7 @@ def exec_test(which="small_binary_g", _exe="../build/nuclear_mpm_solver"):
 
 if __name__ == "__main__":    
     #concat_dataframe()
-    exec_test()
+    exec_test(which="large_binary_g")
 
             
 

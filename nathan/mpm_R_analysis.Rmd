@@ -1,0 +1,96 @@
+---
+title: "mpm_analysis"
+author: "Nathan Shepherd"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup}
+library(reshape2)
+library(ggplot2)
+#library(knitr)
+library(dplyr)
+library(readr)
+library(data.table)
+```
+```{r}
+# steps=100, gravity=-9.8
+sbin_g0 <- read_csv("small_binary_g_0/results.csv",show_col_types=FALSE)
+# steps=100, gravity=-19.8
+sbin_g1 <- read_csv("small_binary_g_1/results.csv",show_col_types=FALSE)
+```
+```{r}
+colnames(sbin_g0)
+```
+
+```{r}
+# steps=1000, gravity=-9.8
+lbin_g0 <- read_csv("large_binary_g_0/results.csv",show_col_types=FALSE)
+# steps=1000, gravity=-19.8
+lbin_g1 <- read_csv("large_binary_g_1/results.csv",show_col_types=FALSE)
+```
+
+```{r}
+#pairs(sbin_g0)
+#ggplot(data=sbin_g0, aes(x=x_0, y=lame_0)) + geom_point()
+hist(lbin_g0$x_0); hist(lbin_g0$x_1)
+hist(lbin_g1$x_0); hist(lbin_g1$x_1)
+
+# Lame coef are the same across all timesteps
+#hist(lbin_g0$lame_0)
+#hist(lbin_g0$lame_1)
+```
+
+```{r}
+hist(lbin_g0$v_0); hist(lbin_g0$v_1)
+hist(lbin_g1$v_0); hist(lbin_g1$v_1)
+```
+> Distribution of values along displament and velocity are the same for g=-9.8 and g=-19.8
+
+```{r}
+pairs(sbin_g0[2:5])
+```
+
+Comparing Displacement over time for different gravity values
+```{r}
+sbin_g0_tgrp = sbin_g0 %>%      # Specify data frame
+  group_by(x_0) %>%             # Specify group indicator
+  summarise_at(vars(timestep),  # Specify column
+               list(name = median))   # Specify function
+sbin_g1_tgrp = sbin_g1 %>%      # Specify data frame
+  group_by(x_0) %>%             # Specify group indicator
+  summarise_at(vars(timestep),  # Specify column
+               list(name = median))   # Specify function
+
+#sbin_g0_tgrp = aggregate(x=sbin_g0$timestep,
+#                         by=list(sbin_g0$x_0),
+#                         FUN=median)
+plot(sbin_g0_tgrp$x_0, sbin_g1_tgrp$x_0)
+```
+```{r}
+plot(lbin_g0$timestep, lbin_g0$x_0)
+plot(lbin_g1$timestep, lbin_g1$x_0)
+```
+
+```{r}
+color = c("blue", "purple")
+cmt = '
+basic = data.frame(g0_x0 = sbin_g0$x_0,
+                   g1_x0 = sbin_g1$x_0,)
+basic_and_finance = data.frame(GMP = gmp_omitted$GMP * gmp_omitted$fin_factors,
+                               population = gmp_omitted$pop,
+                               fin_factors = gmp_omitted$fin_factors)
+'
+
+Combined = melt(list("g0" = sbin_g0,
+                               "g1" = sbin_g1),
+                          id.vars = c("x_0","timestep"))
+
+ggp = ggplot(Combined, ) + ylab("x_0") + xlab("timestep")
+ggp = ggp + theme(legend.position="bottom", legend.box="horizontal")
+ggp = ggp + scale_color_manual(values=color, name="")
+ggp = ggp + geom_point(aes(x=timestep,y=x_0, colour = L1))
+#ggp = ggp + geom_point(aes(x=log(population),y=log(GMP/population), colour = L1))
+ggp
+```
+
